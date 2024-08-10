@@ -8,6 +8,8 @@ public class Main {
         TCP new_tcp = new TCP();
         new_tcp.setPort(2137);
 
+        Request request = new Request();
+
         /*
         InetAddress address;
         try {
@@ -18,5 +20,8 @@ public class Main {
         */
 
         new_tcp.startServer();
+        String req = new_tcp.getRequest();
+        request.parseRequest(req);
+        request.printHeader();
     }
 }

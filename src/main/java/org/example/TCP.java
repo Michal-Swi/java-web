@@ -41,14 +41,11 @@ public class TCP {
 
         System.out.println("Recived in");
 
-        String request;
         try {
             request = readIn(in);
         } catch (IOException e) {
             return false;
         }
-
-        System.out.println(request);
 
         return true;
     }
@@ -68,6 +65,14 @@ public class TCP {
         }
 
         return request;
+    }
+
+    public String getRequest() {
+        return request;
+    }
+
+    public void setRequest(String request) {
+        this.request = request;
     }
 
     public InetAddress getServerAddress() {

@@ -1,23 +1,30 @@
 package org.example;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class TCP {
     private int port;
     private InetAddress serverAddress;
     private ServerSocket serverSocket;
     private DataInputStream in;
-    private String request;
+    private String lastRequest;
+    private String lastResponse;
+    private OutputStream out;
 
     public boolean startServer() {
+        if (serverAddress == null) {
+            return false;
+        }
+
+        if (port == 0) {
+            return false;
+        }
+
         try {
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(port, 0, serverAddress);
         } catch (IOException e) {
             return false;
         }
@@ -42,10 +49,29 @@ public class TCP {
         System.out.println("Recived in");
 
         try {
-            request = readIn(in);
+            lastRequest = readIn(in);
         } catch (IOException e) {
             return false;
         }
+
+        try {
+            out = clientSocket.getOutputStream();
+        } catch (IOException e) {
+            return false;
+        }
+
+        PrintWriter writer = new PrintWriter(out);
+
+        String httpResponse =
+                "HTTP/1.1 200 OK\r\n" +
+                "Content-type: text/plain\r\n" +
+                "\r\n" +
+                "Test!\r\n";
+
+        System.out.println(httpResponse);
+
+        writer.print(httpResponse);
+        writer.flush();
 
         return true;
     }
@@ -67,12 +93,20 @@ public class TCP {
         return request;
     }
 
-    public String getRequest() {
-        return request;
+    public String getLastResponse() {
+        return lastResponse;
     }
 
-    public void setRequest(String request) {
-        this.request = request;
+    public void setLastResponse(String lastResponse) {
+        this.lastResponse = lastResponse;
+    }
+
+    public String getLastRequest() {
+        return lastRequest;
+    }
+
+    public void setLastRequest(String lastRequest) {
+        this.lastRequest = lastRequest;
     }
 
     public InetAddress getServerAddress() {

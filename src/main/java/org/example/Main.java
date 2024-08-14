@@ -8,20 +8,18 @@ public class Main {
         TCP new_tcp = new TCP();
         new_tcp.setPort(2137);
 
-        Request request = new Request();
-
-        /*
-        InetAddress address;
+        InetAddress addr;
         try {
-            address = InetAddress.getByName("127.0.0.1");
+            addr = InetAddress.getByName("127.0.0.1");
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        */
+
+        new_tcp.setServerAddress(addr);
+
+        Request request = new Request();
 
         new_tcp.startServer();
-        String req = new_tcp.getRequest();
-        request.parseRequest(req);
-        request.printHeader();
+        String req = new_tcp.getLastRequest();
     }
 }

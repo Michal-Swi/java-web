@@ -9,6 +9,8 @@ public class Request {
     private Vector<String> body = new Vector<String>();
 
     public void parseRequest(String request) {
+        if (request == null) return;
+
         int i = 0;
         for (; request.charAt(i) != ' '; i++) {
             method += request.charAt(i);
@@ -37,6 +39,9 @@ public class Request {
             body.addElement(line);
         }
 
+        for (i = 0; i < body.size(); i++) {
+            System.out.println(body.get(i));
+        }
     }
 
     public void printHeader() {

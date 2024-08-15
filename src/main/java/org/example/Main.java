@@ -5,21 +5,18 @@ import java.net.UnknownHostException;
 
 public class Main {
     public static void main(String[] args) {
-        TCP new_tcp = new TCP();
-        new_tcp.setPort(2137);
+        TCP server = new TCP();
+        server.setPort(2137);
 
-        InetAddress addr;
-        try {
-            addr = InetAddress.getByName("127.0.0.1");
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+        boolean wasServerAddressSet =
+                server.setServerAddress("127.0.0.1");
+
+        if (!wasServerAddressSet) {
+            return;
         }
 
-        new_tcp.setServerAddress(addr);
-
-        Request request = new Request();
-
-        new_tcp.startServer();
-        String req = new_tcp.getLastRequest();
+        server.startServer();
+        server.waitForClientRequest();
+        System.out.println(server.getLastRequest());
     }
 }

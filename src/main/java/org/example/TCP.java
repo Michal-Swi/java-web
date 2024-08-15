@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class TCP {
     private int port;
@@ -12,9 +13,12 @@ public class TCP {
     private DataInputStream in;
     private String lastRequest;
     private String lastResponse;
-    private OutputStream out;
+    private boolean isSocketCreated = false;
+    private Socket currentClientSocket;
 
     public boolean startServer() {
+        isSocketCreated = false;
+
         if (serverAddress == null) {
             return false;
         }
@@ -25,15 +29,19 @@ public class TCP {
 
         try {
             serverSocket = new ServerSocket(port, 0, serverAddress);
+            isSocketCreated = true;
         } catch (IOException e) {
             return false;
         }
 
         System.out.println("Socket created");
-        Socket clientSocket;
 
+        return true;
+    }
+
+    public boolean waitForClientRequest() {
         try {
-            clientSocket = serverSocket.accept();
+            currentClientSocket = serverSocket.accept();
         } catch (IOException e) {
             return false;
         }
@@ -41,7 +49,7 @@ public class TCP {
         System.out.println("Accepted");
 
         try {
-            in = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
+            in = new DataInputStream(new BufferedInputStream(currentClientSocket.getInputStream()));
         } catch (IOException e) {
             return false;
         }
@@ -54,23 +62,26 @@ public class TCP {
             return false;
         }
 
+        return true;
+    }
+
+    public boolean sendResponse() {
+        if (lastResponse == null) {
+            return false;
+        }
+
+        OutputStream out;
         try {
-            out = clientSocket.getOutputStream();
+            out = currentClientSocket.getOutputStream();
         } catch (IOException e) {
             return false;
         }
 
         PrintWriter writer = new PrintWriter(out);
 
-        String httpResponse =
-                "HTTP/1.1 200 OK\r\n" +
-                "Content-type: text/plain\r\n" +
-                "\r\n" +
-                "Test!\r\n";
+        System.out.println(lastResponse);
 
-        System.out.println(httpResponse);
-
-        writer.print(httpResponse);
+        writer.print(lastResponse);
         writer.flush();
 
         return true;
@@ -93,6 +104,10 @@ public class TCP {
         return request;
     }
 
+    public boolean isSocketCreated() {
+        return isSocketCreated;
+    }
+
     public String getLastResponse() {
         return lastResponse;
     }
@@ -105,16 +120,25 @@ public class TCP {
         return lastRequest;
     }
 
-    public void setLastRequest(String lastRequest) {
-        this.lastRequest = lastRequest;
-    }
-
     public InetAddress getServerAddress() {
         return serverAddress;
     }
 
-    public void setServerAddress(InetAddress serverAddress) {
-        this.serverAddress = serverAddress;
+    public boolean setServerAddress(String serverAddress) {
+        InetAddress inetServerAddress;
+
+        try {
+            inetServerAddress = InetAddress.getByName(serverAddress);
+        } catch (UnknownHostException e) {
+            return false;
+        }
+
+        this.serverAddress = inetServerAddress;
+        return true;
+    }
+
+    public boolean isServerAddressSet() {
+        return serverAddress.getAddress() != null;
     }
 
     public int getPort() {
@@ -131,5 +155,9 @@ public class TCP {
 
     public DataInputStream getIn() {
         return in;
+    }
+
+    public Socket getCurrentClientSocket() {
+        return currentClientSocket;
     }
 }

@@ -1,10 +1,13 @@
 package org.example;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.*;
+import java.util.concurrent.Callable;
 
 public class TCP {
     private int port;
@@ -13,12 +16,12 @@ public class TCP {
     private DataInputStream in;
     private String lastRequest;
     private String lastResponse;
-    private boolean isSocketCreated = false;
+    private Request lastRequestParsed = new Request();
     private Socket currentClientSocket;
+    private boolean isServerRunning = false;
+    private Map<String, Page> routes = new HashMap<String, Page>();
 
     public boolean startServer() {
-        isSocketCreated = false;
-
         if (serverAddress == null) {
             return false;
         }
@@ -29,37 +32,38 @@ public class TCP {
 
         try {
             serverSocket = new ServerSocket(port, 0, serverAddress);
-            isSocketCreated = true;
         } catch (IOException e) {
             return false;
         }
 
         System.out.println("Socket created");
 
-        return true;
-    }
+        isServerRunning = true;
+        while (isServerRunning) {
+            try {
+                currentClientSocket = serverSocket.accept();
+            } catch (IOException e) {
+                return false;
+            }
 
-    public boolean waitForClientRequest() {
-        try {
-            currentClientSocket = serverSocket.accept();
-        } catch (IOException e) {
-            return false;
-        }
+            System.out.println("Accepted");
 
-        System.out.println("Accepted");
+            try {
+                in = new DataInputStream(new BufferedInputStream(currentClientSocket.getInputStream()));
+            } catch (IOException e) {
+                lastRequest = null;
+                continue;
+            }
 
-        try {
-            in = new DataInputStream(new BufferedInputStream(currentClientSocket.getInputStream()));
-        } catch (IOException e) {
-            return false;
-        }
+            System.out.println("Recived in");
 
-        System.out.println("Recived in");
+            try {
+                lastRequest = readIn(in);
+            } catch (IOException e) {
+                lastRequest = null;
+            }
 
-        try {
-            lastRequest = readIn(in);
-        } catch (IOException e) {
-            return false;
+            sendResponse();
         }
 
         return true;
@@ -70,6 +74,23 @@ public class TCP {
             return false;
         }
 
+        if (lastRequest == null) {
+            return false;
+        }
+
+        lastRequestParsed.parseRequest(lastRequest);
+
+        if (!routes.get(lastRequestParsed.getUrl()).isAccessibleByEveryone()) {
+            return false;
+        }
+
+        Response response = new Response();
+        response.setHtml(routes.get(lastRequestParsed.getUrl()).getHtml());
+        response.setCode("200");
+        response.setVersion("HTTP/1.1");
+        response.setMessage("OK");
+        response.formResponse();
+
         OutputStream out;
         try {
             out = currentClientSocket.getOutputStream();
@@ -79,11 +100,18 @@ public class TCP {
 
         PrintWriter writer = new PrintWriter(out);
 
-        System.out.println(lastResponse);
-
-        writer.print(lastResponse);
+        writer.print(response.getResponse());
         writer.flush();
 
+        return true;
+    }
+
+    public boolean addRoute(String route, Page page) {
+        if (route == null) return false;
+
+        if (page == null) return false;
+
+        routes.put(route, page);
         return true;
     }
 
@@ -104,8 +132,24 @@ public class TCP {
         return request;
     }
 
-    public boolean isSocketCreated() {
-        return isSocketCreated;
+    public Map<String, Page> getRoutes() {
+        return routes;
+    }
+
+    public void setRoutes(Map<String, Page> routes) {
+        this.routes = routes;
+    }
+
+    public void stopServer() {
+        isServerRunning = false;
+    }
+
+    public boolean isServerRunning() {
+        return isServerRunning;
+    }
+
+    public void setServerRunning(boolean serverRunning) {
+        isServerRunning = serverRunning;
     }
 
     public String getLastResponse() {

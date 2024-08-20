@@ -6,7 +6,7 @@ public class Response {
     private String version;
     private String code;
     private String message;
-    private Vector<String> additionalInfo = new Vector();
+    private Vector<String> additionalInfo = new Vector<>();
     private String html;
     private String response;
 

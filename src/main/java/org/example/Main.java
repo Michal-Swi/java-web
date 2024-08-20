@@ -16,7 +16,5 @@ public class Main {
         }
 
         server.startServer();
-        server.waitForClientRequest();
-        System.out.println(server.getLastRequest());
     }
 }
